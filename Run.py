@@ -56,7 +56,6 @@ def urls_to_scrape(username):
 
     df_to_scrape = pd.pandas.DataFrame(dataframe).reset_index(drop=True)
     df_to_scrape = df_to_scrape.drop_duplicates(subset=['urls'], keep='first')
-    print(df_to_scrape)
 
     return df_to_scrape
 
@@ -124,7 +123,6 @@ def scrape(df_to_scrape):
         subarray = [tweet_url[0], spaces_url[0]]
         url_array.append(subarray)
 
-    print(url_array)
     return url_array
 
 
@@ -158,16 +156,12 @@ if __name__ == "__main__":
                 sleep(10)
                 spaces_text, twitter_space_date, host_name = get_space_data(driver)
                 sleep(1)
-                print(spaces_text)
-                print(twitter_space_date)
-                print(host_name)
                 driver.quit()
 
                 driver = launch_website(url[0])
                 sleep(10)
                 tweet_text = get_tweet_data(driver)
                 sleep(1)
-                print(tweet_text)
                 driver.quit()
 
                 if "tuned in" not in twitter_space_date and host_name is not [''] and twitter_space_date is not [''] \
@@ -185,28 +179,18 @@ if __name__ == "__main__":
         elif not tweet_text_array and not spaces_text_array and not twitter_space_dates_array and not host_name_array:
             pass
         else:
-            print("---------------")
-            print(tweet_text_array)
-            print(spaces_text_array)
-            print(twitter_space_dates_array)
-            print(host_name_array)
-            print("---------------")
             df_tweet_text = pd.DataFrame(tweet_text_array, columns=['tweet_text'])
             df_spaces_text = pd.DataFrame(spaces_text_array, columns=['spaces_text'])
             df_twitter_space_dates = pd.DataFrame(twitter_space_dates_array, columns=['twitter_space_dates'])
             df_host_names = pd.DataFrame(host_name_array, columns=['host_name'])
-            print("---------------")
-            print(df_to_scrape)
+
             final_df = df_to_scrape.join(df_host_names)
             final_df = final_df.join(df_tweet_text)
             final_df = final_df.join(df_spaces_text)
             final_df = final_df.join(df_twitter_space_dates)
-            print(final_df)
-            print("---------------")
+
             data_to_upload = pd.concat([data_to_upload, final_df])
 
-    print("---------------")
-    print(data_to_upload)
     if not data_to_upload.empty:
         print("--- Uploading to Google Sheet ---")
         creds = google_sheets.authorize()
