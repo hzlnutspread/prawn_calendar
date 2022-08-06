@@ -1,7 +1,6 @@
 from __future__ import print_function
 import os
 import gspread
-import pandas as pd
 from gspread_dataframe import set_with_dataframe
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials

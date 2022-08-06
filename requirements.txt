@@ -1,6 +1,6 @@
 requests==2.28.1
 pandas==1.4.3
-twint==2.1.21
+git+https://github.com/twintproject/twint.git@origin/master#egg=twint
 selenium==4.3.0
 webdriver_manager==3.8.2
 beautifulsoup4==4.11.1
