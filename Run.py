@@ -38,7 +38,7 @@ def urls_to_scrape(username):
     twint.run.Search(c)
     dataframe = twint.storage.panda.Tweets_df
     try:
-        dataframe = dataframe[['username', 'link', 'urls']]
+        dataframe = dataframe[['username', 'link', 'urls', 'tweet']]
         dataframe = dataframe.astype({'urls': 'string'})
 
         for index in dataframe.index:
@@ -61,9 +61,10 @@ def urls_to_scrape(username):
 
 
 def launch_website(url):
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+    chrome_options = webdriver.ChromeOptions()
+    chrome_options.add_argument('--headless')
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
     driver.get(url)
-    driver.maximize_window()
     return driver
 
 
@@ -95,23 +96,6 @@ def get_space_data(driver):
     return spaces_text, twitter_space_date, host_name
 
 
-def get_tweet_data(driver):
-    soup = BeautifulSoup(driver.page_source, 'lxml')
-
-    if soup.find('div', class_='css-901oao r-1nao33i r-37j5jr r-1blvdjr r-16dba41 r-vrz42v '
-                               'r-bcqeeo r-bnwqim r-qvutc0') is not None:
-
-        tweet_text = soup.find('div', class_='css-901oao r-1nao33i r-37j5jr r-1blvdjr r-16dba41 r-vrz42v '
-                                             'r-bcqeeo r-bnwqim r-qvutc0').text
-        tweet_text = tweet_text.replace('\n\n', '\n')
-        tweet_text = tweet_text.replace('\n', '')
-        tweet_text = tweet_text.replace('  ', ' ')
-    else:
-        tweet_text = ''
-
-    return tweet_text
-
-
 def scrape(df_to_scrape):
     url_array = []
     if len(df_to_scrape) == 0:
@@ -133,20 +117,18 @@ if __name__ == "__main__":
     today = (datetime.now()).strftime('%Y-%m-%d')
     tomorrow = (datetime.now() + timedelta(1)).strftime('%Y-%m-%d')
 
-    data_to_upload = pd.DataFrame(columns=['username', 'link', 'urls', 'host_name', 'tweet_text', 'spaces_text',
+    data_to_upload = pd.DataFrame(columns=['username', 'link', 'urls', 'tweet', 'host_name', 'tweet_text', 'spaces_text',
                                            'twitter_space_dates'])
     usernames_list = get_usernames_list()
     for username in usernames_list:
         df_to_scrape = urls_to_scrape(username)
         url_array = scrape(df_to_scrape)
 
-        tweet_text_array = []
         spaces_text_array = []
         twitter_space_dates_array = []
         host_name_array = []
 
         if len(url_array) == 0:
-            tweet_text_array = None
             spaces_text_array = None
             twitter_space_dates_array = None
             host_name_array = None
@@ -160,13 +142,10 @@ if __name__ == "__main__":
 
                 driver = launch_website(url[0])
                 sleep(10)
-                tweet_text = get_tweet_data(driver)
-                sleep(1)
                 driver.quit()
 
                 if "tuned in" not in twitter_space_date and host_name is not [''] and twitter_space_date is not [''] \
                         and "in this space" not in twitter_space_date:
-                    tweet_text_array.append(tweet_text)
                     spaces_text_array.append(spaces_text)
                     twitter_space_dates_array.append(twitter_space_date)
                     host_name_array.append(host_name)
@@ -174,18 +153,16 @@ if __name__ == "__main__":
                     df_to_scrape = df_to_scrape[df_to_scrape.link != url[0]]
                     df_to_scrape = df_to_scrape.reset_index(drop=True)
 
-        if tweet_text_array is None or spaces_text_array is None or twitter_space_dates_array is None or host_name_array is None:
+        if spaces_text_array is None or twitter_space_dates_array is None or host_name_array is None:
             pass
-        elif not tweet_text_array and not spaces_text_array and not twitter_space_dates_array and not host_name_array:
+        elif not spaces_text_array and not twitter_space_dates_array and not host_name_array:
             pass
         else:
-            df_tweet_text = pd.DataFrame(tweet_text_array, columns=['tweet_text'])
             df_spaces_text = pd.DataFrame(spaces_text_array, columns=['spaces_text'])
             df_twitter_space_dates = pd.DataFrame(twitter_space_dates_array, columns=['twitter_space_dates'])
             df_host_names = pd.DataFrame(host_name_array, columns=['host_name'])
 
             final_df = df_to_scrape.join(df_host_names)
-            final_df = final_df.join(df_tweet_text)
             final_df = final_df.join(df_spaces_text)
             final_df = final_df.join(df_twitter_space_dates)
 
